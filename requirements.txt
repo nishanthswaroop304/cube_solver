@@ -3,4 +3,4 @@ opencv-python-headless==4.11.0.86
 python-dotenv==1.0.1
 Pillow==11.0.0
 google-genai==1.2.0
-kociemba=1.2.1
+kociemba==1.2.1
