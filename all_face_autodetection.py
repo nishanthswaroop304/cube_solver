@@ -7,10 +7,23 @@ from google import genai
 import PIL.Image
 from cube_string import generate_cube_string, convert_color_to_kociemba, solve_cube  # Import cube string module
 
-# Load environment variables
-load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-TIMER_DURATION = int(os.getenv("TIMER_DURATION", "3"))
+# Load streamlit secret or env variables
+try:
+    # Try to access secrets from Streamlit Cloud or a local secrets.toml
+    _ = st.secrets
+    use_secrets = True
+except FileNotFoundError:
+    # No secrets.toml found, fallback to .env
+    use_secrets = False
+
+if use_secrets and "GEMINI_API_KEY" in st.secrets:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    TIMER_DURATION = int(st.secrets.get("TIMER_DURATION", "3"))
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    TIMER_DURATION = int(os.getenv("TIMER_DURATION", "3"))
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
