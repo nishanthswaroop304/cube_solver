@@ -1,0 +1,232 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #212121;
+    color: #ECECEC;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Headers & Subtext */
+  h1, h2, h3, h4, h5, h6 {
+    color: #ECECEC;
+  }
+  .subtext {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  
+  /* Start Capture Button */
+  #startCaptureBtn {
+    display: block;
+    margin: 0 auto 20px auto;
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #2F2F2F;
+    color: #ECECEC;
+    border: 1px solid #4E4E4E;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+  #startCaptureBtn:hover {
+    opacity: 0.9;
+  }
+  
+  /* Video container */
+  #videoContainer {
+    position: relative;
+    display: inline-block;
+  }
+  /* Video element */
+  #video {
+    border: 1px solid #ccc;
+  }
+  
+  /* Flash overlay element */
+  #flashOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-out;
+  }
+  #flashOverlay.active {
+    opacity: 0.7;
+  }
+  
+  /* Gallery Container */
+  #gallery {
+    width: 75%;
+    margin: 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    background-color: #303030;
+    border-radius: 50px;
+    padding: 20px;
+  }
+  
+  /* Captured Cube Images Subtext */
+  .captured-subtext {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  /* Individual image containers */
+  .image-container {
+    width: 100px;
+    text-align: center;
+  }
+  .image-container img {
+    width: 100px;
+    border: 1px solid #ccc;
+  }
+  
+  /* Spinner styling for images */
+  .spinner {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ff6600;
+  }
+  
+  /* Rotating spinner for processing messages */
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .spinner-rotate {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    font-size: 18px;
+  }
+  
+  /* AI output text */
+  .ai-output {
+    font-size: 14px;
+    color: #ECECEC;
+    margin-top: 5px;
+  }
+  
+  /* Timer and label overlays */
+  #timer,
+  #label {
+    position: absolute;
+    background-color: black;
+    color: #ECECEC;
+    padding: 5px 8px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  #timer {
+    top: 10px;
+    right: 10px;
+  }
+  #label {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    text-align: center;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  
+  /* Processing message under gallery (images) */
+  #processingMessage {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #20B8CD;
+  }
+  
+  /* Processing message for cube output */
+  #cubeProcessingMessage {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #20B8CD;
+  }
+  
+  /* Manual Correction Section */
+  #manualCorrectionSection {
+    text-align: center;
+    margin: 20px auto;
+    width: 300px;
+    padding-top: 10px;
+  }
+  #manualCorrectionSection summary {
+    font-size: 1.75em;
+    cursor: pointer;
+  }
+  .manual-subtext {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  /* Increase grid size and style cells */
+  #gridEditor table {
+    border-collapse: collapse;
+    margin: 10px auto;
+  }
+  #gridEditor td {
+    background-color: #303030;
+    border: 1px solid #212121;
+    padding: 10px;
+  }
+  #gridEditor input {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    text-align: center;
+    border: none;
+    background-color: transparent;
+    color: #ECECEC;
+  }
+  
+  /* Button styling for both Save Correction and Generate Solution */
+  button {
+    display: block;
+    margin: 10px auto;
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #2F2F2F;
+    color: #ECECEC;
+    border: 1px solid #4E4E4E;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+  button:hover {
+    opacity: 0.9;
+  }
+  /* Increase size of Generate Solution button */
+  #generateSolutionBtn {
+    font-size: 32px;
+    padding: 20px 40px;
+  }
+  
+  /* Correction message */
+  #correctionMsg {
+    color: green;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+  }
+  
+  /* Final solution output */
+  /* Final solution output container */
+#finalSolution {
+    background-color: #0D0D0D;
+    color: #FFFFFF;
+    text-align: left;
+    margin: 20px auto; /* center aligned */
+    width: 70%;
+    padding: 20px;
+    font-size: 16px;
+    border-radius: 10px; /* optional rounded corners */
+  }
+  
+  

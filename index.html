@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Rubiks Cube AI Solver</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>Rubiks Cube AI Solver</h2>
+  <p class="subtext">Grab your cube and point it to the camera to start capturing its sides.</p>
+  
+  <!-- Start Capture Button -->
+  <button id="startCaptureBtn">Start Face Capture</button>
+  
+  <div id="videoContainer">
+    <div id="label"></div>
+    <div id="timer"></div>
+    <video id="video" width="640" height="480" autoplay muted></video>
+    <!-- Flash overlay element -->
+    <div id="flashOverlay"></div>
+  </div>
+  <br>
+  <h3>Captured Cube Images</h3>
+  <p class="captured-subtext">
+    AI outputs must show colors of the cube in the image from left to right.
+    If incorrect, manually correct them in the next section before clicking "Generate Solution".
+    Use the first letter of the color in caps to correct the grid (like W for White).
+  </p>
+  <div id="gallery"></div>
+  <!-- Global processing message for images -->
+  <p id="processingMessage" style="display: none;">
+    AI is processing images, stay tuned <span class="spinner-rotate">⏳</span>
+  </p>
+
+  <!-- Manual Correction Section (hidden in a chevron) -->
+  <details id="manualCorrectionSection">
+    <summary>Manual Correction</summary>
+    <p class="manual-subtext">
+      If the AI output is incorrect, manually adjust the 3×3 grid below.
+    </p>
+    <div>
+      <label for="faceSelect">Select Face:</label>
+      <select id="faceSelect">
+        <option value="U">Face 1 - U</option>
+        <option value="R">Face 2 - R</option>
+        <option value="F">Face 3 - F</option>
+        <option value="D">Face 4 - D</option>
+        <option value="L">Face 5 - L</option>
+        <option value="B">Face 6 - B</option>
+      </select>
+    </div>
+    <div id="gridEditor"></div>
+    <button id="saveCorrectionBtn">Save Correction</button>
+    <div id="correctionMsg"></div>
+  </details>
+
+  <!-- Generate Solution Button (outside the chevron) -->
+  <button id="generateSolutionBtn">Generate Solution</button>
+  <!-- New processing message for cube output -->
+  <p id="cubeProcessingMessage" style="display: none;">
+    AI is processing cube output, please wait <span class="spinner-rotate">⏳</span>
+  </p>
+  <div id="finalSolution"></div>
+
+  <script>
+    // Configuration
+    const TIMER_DURATION = 8; // seconds
+    const totalCaptures = 6; // Total images to capture
+    const colorOrder = ["W", "R", "G", "Y", "O", "B"];
+    const colorNames = {
+      "W": "white (W)", "Y": "yellow (Y)", "R": "red (R)", "G": "green (G)", "O": "orange (O)", "B": "blue (B)"
+    };
+    
+    let capturedCount = 0;
+    let imagePaths = [];
+    let imageContainers = [];
+    // Store AI-generated grids for each face (keys: U, R, F, D, L, B)
+    let finalGrids = {};
+    // Store manual corrections (if any)
+    let manualCorrections = {};
+
+    // Update the overlay label for capture instructions.
+    function updateLabel() {
+      if (capturedCount >= colorOrder.length) {
+        document.getElementById('label').textContent = "";
+        return;
+      }
+      const currentColor = colorOrder[capturedCount];
+      const colorName = colorNames[currentColor];
+      
+      if (currentColor === "W" || currentColor === "Y") {
+        document.getElementById('label').textContent = `Point the cube face with ${colorName} center with red (R) center facing to your LEFT.`;
+      } else {
+        document.getElementById('label').textContent = `Point the cube face with ${colorName} center with white (W) center facing UP.`;
+      }
+    }
+
+    // Trigger flash overlay effect
+    function triggerFlash() {
+      const flash = document.getElementById("flashOverlay");
+      flash.classList.add("active");
+      setTimeout(() => {
+        flash.classList.remove("active");
+      }, 200);
+    }
+
+    // Capture a photo from the live video feed and display it in the gallery.
+    function capturePhoto() {
+      if (capturedCount >= colorOrder.length) return;
+      const captureCanvas = document.createElement('canvas');
+      captureCanvas.width = video.videoWidth;
+      captureCanvas.height = video.videoHeight;
+      const ctx = captureCanvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+      
+      const dataURL = captureCanvas.toDataURL('image/png');
+      imagePaths.push(dataURL);
+      
+      const container = document.createElement('div');
+      container.classList.add('image-container');
+      container.id = 'capture-container-' + capturedCount;
+      
+      const img = document.createElement('img');
+      img.src = dataURL;
+      container.appendChild(img);
+      
+      const spinner = document.createElement('div');
+      spinner.classList.add('spinner');
+      spinner.textContent = "⏳";
+      container.appendChild(spinner);
+      
+      const aiOutput = document.createElement('p');
+      aiOutput.classList.add('ai-output');
+      container.appendChild(aiOutput);
+      
+      document.getElementById('gallery').appendChild(container);
+      imageContainers.push(container);
+      
+      capturedCount++;
+      updateLabel();
+      triggerFlash();
+    }
+
+    // Send images to the backend for analysis.
+    async function sendImagesForAnalysis(imagePaths) {
+      // Show processing message for images
+      document.getElementById('processingMessage').style.display = 'block';
+      
+      const response = await fetch('http://localhost:8080/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: imagePaths })
+      });
+      
+      const result = await response.json();
+      displayAIResults(result.analysis);
+      
+      // Hide processing message after AI output is displayed
+      document.getElementById('processingMessage').style.display = 'none';
+    }
+
+    // Update each image container with the AI grid output in the correct order.
+    function displayAIResults(analysis) {
+      const faceOrder = ["U", "R", "F", "D", "L", "B"];
+      faceOrder.forEach((face, index) => {
+        const data = analysis[face];
+        const container = imageContainers[index];
+        if (!container || !data) return;
+        
+        // Hide the spinner.
+        const spinner = container.querySelector('.spinner');
+        if (spinner) spinner.style.display = 'none';
+        
+        // Format the grid into a string with line breaks.
+        const formattedGrid = data.grid.map(row => row.join(' ')).join('<br>');
+        const aiOutput = container.querySelector('.ai-output');
+        aiOutput.innerHTML = `AI Output for Face ${face}:<br>${formattedGrid}`;
+        
+        // Save the AI grid to finalGrids.
+        finalGrids[face] = data.grid;
+      });
+    }
+
+    // Load grid data into the manual correction editor.
+    function loadGridEditor(face) {
+      const gridData = manualCorrections[face] || finalGrids[face];
+      if (!gridData) {
+        document.getElementById('gridEditor').innerHTML = "<p>No grid data available.</p>";
+        return;
+      }
+      let html = "<table>";
+      for (let i = 0; i < 3; i++) {
+        html += "<tr>";
+        for (let j = 0; j < 3; j++) {
+          const value = gridData[i][j] || "";
+          html += `<td><input type="text" maxlength="1" value="${value}" data-row="${i}" data-col="${j}"></td>`;
+        }
+        html += "</tr>";
+      }
+      html += "</table>";
+      document.getElementById('gridEditor').innerHTML = html;
+      document.getElementById('correctionMsg').textContent = "";
+    }
+
+    // Save manual correction for the currently selected face.
+    function saveCorrection() {
+      const face = document.getElementById('faceSelect').value;
+      const inputs = document.querySelectorAll("#gridEditor input");
+      let newGrid = [[], [], []];
+      inputs.forEach(input => {
+        const row = parseInt(input.getAttribute("data-row"));
+        newGrid[row].push(input.value.toUpperCase());
+      });
+      manualCorrections[face] = newGrid;
+      finalGrids[face] = newGrid;
+      document.getElementById('correctionMsg').textContent = `New grid for Face ${face} saved successfully!`;
+    }
+
+    // Generate final solution by sending the (possibly corrected) grids to the backend.
+    async function generateSolution() {
+      // Show processing message for cube output
+      document.getElementById('cubeProcessingMessage').style.display = 'block';
+      
+      const faceOrder = ["U", "R", "F", "D", "L", "B"];
+      let grids = {};
+      faceOrder.forEach(face => {
+        grids[face] = manualCorrections[face] || finalGrids[face];
+      });
+      const response = await fetch('http://localhost:8080/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grids: grids })
+      });
+      const result = await response.json();
+      const finalDiv = document.getElementById('finalSolution');
+      finalDiv.innerHTML = `<h3>Final Solution</h3>
+        <p>Color Cube String: ${result.color_string}</p>
+        <p>Kociemba String: ${result.cube_string}</p>
+        <p>Solution: ${result.solution}</p>
+        <p>Step-by-Step Instructions:</p>
+        <div class="instructions">${result.instructions}</div>`;
+      
+      // Hide processing message after results are shown
+      document.getElementById('cubeProcessingMessage').style.display = 'none';
+    }
+
+    // Capture images with a countdown.
+    function startAutoCapture() {
+      function captureWithCountdown(count) {
+        if (count === 0) {
+          sendImagesForAnalysis(imagePaths);
+          return;
+        }
+        let timeLeft = TIMER_DURATION;
+        const timerElement = document.getElementById('timer');
+        timerElement.textContent = `Timer: ${timeLeft}s`;
+        
+        const timerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft >= 0) {
+            timerElement.textContent = `Timer: ${timeLeft}s`;
+          }
+        }, 1000);
+        
+        setTimeout(() => {
+          clearInterval(timerInterval);
+          capturePhoto();
+          captureWithCountdown(count - 1);
+        }, TIMER_DURATION * 1000);
+      }
+      
+      captureWithCountdown(totalCaptures);
+    }
+
+    // Start the live camera feed when "Start Face Capture" is clicked.
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById('video').srcObject = stream;
+        updateLabel();
+        startAutoCapture();
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+        document.getElementById('gallery').innerHTML += "<p>Error accessing the camera.</p>";
+      }
+    }
+
+    // Event listeners.
+    document.getElementById('startCaptureBtn').addEventListener("click", startCamera);
+    document.getElementById('faceSelect').addEventListener("change", function() {
+      loadGridEditor(this.value);
+    });
+    document.getElementById('saveCorrectionBtn').addEventListener("click", saveCorrection);
+    document.getElementById('generateSolutionBtn').addEventListener("click", generateSolution);
+  </script>
+</body>
+</html>

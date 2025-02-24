@@ -1,8 +1,21 @@
 # cube_string.py
 # Make sure to install the kociemba package with:
 # pip install kociemba
+# Also install python-dotenv and the gemini client as required.
 
+import os
+from dotenv import load_dotenv
 import kociemba  # Cube solver module
+from google import genai  # Gemini client
+
+# Load environment variables from .env file
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("❌ ERROR: GEMINI_API_KEY is missing! Make sure it's set in the environment.")
+
+# Instantiate Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 def vertical_flip(grid):
     """Flip a 3×3 grid vertically (reverse the order of rows)."""
@@ -15,27 +28,12 @@ def horizontal_flip(grid):
 def generate_cube_string(face_assignment):
     """
     Given a dictionary mapping face labels ("U", "R", "F", "D", "L", "B")
-    to 3×3 grids, apply the following corrections:
-      - U: vertical flip
-      - R: horizontal flip
-      - F: horizontal flip
-      - D: vertical flip
-      - L: horizontal flip
-      - B: horizontal flip
-    Then assemble and return the continuous 54-character color cube string,
-    reading the faces in URFDLB order.
+    to 3×3 grids, assemble and return the continuous 54-character color cube string,
+    reading the faces in URFDLB order without applying any inversions.
     """
-    corrected_faces = {}
-    corrected_faces["U"] = vertical_flip(face_assignment["U"])
-    corrected_faces["R"] = horizontal_flip(face_assignment["R"])
-    corrected_faces["F"] = horizontal_flip(face_assignment["F"])
-    corrected_faces["D"] = vertical_flip(face_assignment["D"])
-    corrected_faces["L"] = horizontal_flip(face_assignment["L"])
-    corrected_faces["B"] = horizontal_flip(face_assignment["B"])
-    
     cube_string = "".join(
         "".join(row) for face in ["U", "R", "F", "D", "L", "B"]
-        for row in corrected_faces[face]
+        for row in face_assignment[face]
     )
     return cube_string
 
@@ -62,48 +60,55 @@ def solve_cube(kociemba_cube_string):
         solution = f"Error solving cube: {e}"
     return solution
 
+
+
 if __name__ == '__main__':
-    # For standalone testing:
+    # For standalone testing, using sample grids for each face.
     face_assignment = {
         "U": [
-            ["O", "W", "R"],
-            ["O", "W", "B"],
-            ["R", "G", "W"],
+            ["G", "Y", "Y"],
+            ["W", "W", "G"],
+            ["W", "R", "W"],
         ],
         "R": [
-            ["G", "O", "W"],
-            ["R", "R", "G"],
-            ["O", "O", "R"],
+            ["O", "R", "B"],
+            ["O", "R", "W"],
+            ["O", "R", "W"],
         ],
         "F": [
-            ["B", "R", "B"],
-            ["W", "G", "Y"],
-            ["Y", "Y", "O"],
+            ["R", "Y", "B"],
+            ["G", "G", "B"],
+            ["G", "G", "B"],
         ],
         "D": [
-            ["O", "W", "Y"],
-            ["Y", "Y", "G"],
-            ["W", "G", "B"],
+            ["Y", "Y", "Y"],
+            ["Y", "Y", "W"],
+            ["W", "W", "O"],
         ],
         "L": [
-            ["W", "W", "Y"],
-            ["O", "O", "B"],
-            ["G", "R", "B"],
+            ["R", "O", "G"],
+            ["R", "O", "O"],
+            ["R", "O", "O"],
         ],
         "B": [
-            ["G", "R", "R"],
-            ["Y", "B", "B"],
-            ["Y", "B", "G"],
+            ["R", "B", "Y"],
+            ["G", "B", "B"],
+            ["G", "B", "B"],
         ],
     }
     
+    # Build the color cube string without inversion.
     color_string = generate_cube_string(face_assignment)
-    kociemba_string = convert_color_to_kociemba(color_string)
-    solution = solve_cube(kociemba_string)
-    
     print("Color Cube String:")
     print(color_string)
+    
+    # Convert to Kociemba notation.
+    kociemba_string = convert_color_to_kociemba(color_string)
     print("\nKociemba Cube String:")
     print(kociemba_string)
+    
+    # Solve the cube.
+    cube_solution = solve_cube(kociemba_string)
     print("\nKociemba Solver Output:")
-    print(solution)
+    print(cube_solution)
+
