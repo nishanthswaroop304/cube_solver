@@ -22,6 +22,10 @@ client = genai.Client(api_key=API_KEY)
 app = Flask(__name__)
 CORS(app)  # ✅ Enable CORS for frontend access
 
+@app.route("/")
+def home():
+    return "Welcome to the AI Rubik's Cube Solver API! Use `/analyze` or `/generate`."
+
 def parse_grid(response_text):
     """
     Convert AI output string to a structured 3x3 grid format.
