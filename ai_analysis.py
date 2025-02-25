@@ -4,7 +4,7 @@ from google import genai
 from dotenv import load_dotenv
 import base64
 import io
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS  # ✅ Added CORS support
 from cube_string import generate_cube_string, convert_color_to_kociemba, solve_cube  # ✅ Import required functions
 
@@ -24,7 +24,7 @@ CORS(app)  # ✅ Enable CORS for frontend access
 
 @app.route("/")
 def home():
-    return "Welcome to the AI Rubik's Cube Solver API! Use `/analyze` or `/generate`."
+    return render_template("index.html")
 
 def parse_grid(response_text):
     """
@@ -157,5 +157,5 @@ def generate_solution():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # ✅ Use Heroku's port or default to 8080
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 8080))  # Use Heroku's port or default to 8080
+    app.run(host="0.0.0.0", port=port, debug=False)

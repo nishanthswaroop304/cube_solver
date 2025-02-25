@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Rubiks Cube AI Solver</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
   <h2>Rubiks Cube AI Solver</h2>
@@ -146,11 +146,12 @@
       // Show processing message for images
       document.getElementById('processingMessage').style.display = 'block';
       
-      const response = await fetch('http://localhost:8080/analyze', {
+      const response = await fetch('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images: imagePaths })
       });
+
       
       const result = await response.json();
       displayAIResults(result.analysis);
@@ -226,11 +227,12 @@
       faceOrder.forEach(face => {
         grids[face] = manualCorrections[face] || finalGrids[face];
       });
-      const response = await fetch('http://localhost:8080/generate', {
+      const response = await fetch('/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ grids: grids })
       });
+
       const result = await response.json();
       const finalDiv = document.getElementById('finalSolution');
       finalDiv.innerHTML = `<h3>Final Solution</h3>
