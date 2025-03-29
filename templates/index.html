@@ -9,13 +9,16 @@
   <h2>Rubiks Cube AI Solver</h2>
   <p class="subtext">Grab your cube and point it to the camera to start capturing its sides.</p>
   
-  <!-- Start Capture Button -->
-  <button id="startCaptureBtn">Start Face Capture</button>
+  <!-- Start Capture Button - outside any form -->
+  <button id="startCaptureBtn" type="button" onclick="startCamera(); return false;">Start Face Capture</button>
   
   <div id="videoContainer">
     <div id="label"></div>
-    <div id="timer"></div>
     <video id="video" width="640" height="480" autoplay muted></video>
+    <!-- Circular capture button in center of video -->
+    <div id="captureCircle">
+      <div id="innerCircle"></div>
+    </div>
     <!-- Flash overlay element -->
     <div id="flashOverlay"></div>
   </div>
@@ -64,7 +67,6 @@
 
   <script>
     // Configuration
-    const TIMER_DURATION = 8; // seconds
     const totalCaptures = 6; // Total images to capture
     const colorOrder = ["W", "R", "G", "Y", "O", "B"];
     const colorNames = {
@@ -78,6 +80,59 @@
     let finalGrids = {};
     // Store manual corrections (if any)
     let manualCorrections = {};
+    let isCapturing = false;
+    
+    // Add event listeners when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("DOM fully loaded - adding event listeners");
+      
+      const startBtn = document.getElementById('startCaptureBtn');
+      if (startBtn) {
+        startBtn.onclick = function(e) {
+          e.preventDefault();
+          console.log("Start capture button clicked");
+          startCamera();
+          return false;
+        };
+      } else {
+        console.error("Start button not found!");
+      }
+      
+      const captureCircleEl = document.getElementById('captureCircle');
+      if (captureCircleEl) {
+        captureCircleEl.onclick = function(e) {
+          e.preventDefault();
+          console.log("Capture circle clicked");
+          capturePhoto();
+          return false;
+        };
+      }
+      
+      const faceSelectEl = document.getElementById('faceSelect');
+      if (faceSelectEl) {
+        faceSelectEl.onchange = function() {
+          loadGridEditor(this.value);
+        };
+      }
+      
+      const saveCorrectionEl = document.getElementById('saveCorrectionBtn');
+      if (saveCorrectionEl) {
+        saveCorrectionEl.onclick = function(e) {
+          e.preventDefault();
+          saveCorrection();
+          return false;
+        };
+      }
+      
+      const genSolutionEl = document.getElementById('generateSolutionBtn');
+      if (genSolutionEl) {
+        genSolutionEl.onclick = function(e) {
+          e.preventDefault();
+          generateSolution();
+          return false;
+        };
+      }
+    });
 
     // Update the overlay label for capture instructions.
     function updateLabel() {
@@ -106,7 +161,8 @@
 
     // Capture a photo from the live video feed and display it in the gallery.
     function capturePhoto() {
-      if (capturedCount >= colorOrder.length) return;
+      if (capturedCount >= colorOrder.length || !isCapturing) return;
+      
       const captureCanvas = document.createElement('canvas');
       captureCanvas.width = video.videoWidth;
       captureCanvas.height = video.videoHeight;
@@ -137,8 +193,16 @@
       imageContainers.push(container);
       
       capturedCount++;
-      updateLabel();
       triggerFlash();
+      
+      // If all captures are done, send for analysis
+      if (capturedCount >= colorOrder.length) {
+        sendImagesForAnalysis(imagePaths);
+        // Hide capture circle when done
+        document.getElementById('captureCircle').style.display = 'none';
+      } else {
+        updateLabel();
+      }
     }
 
     // Send images to the backend for analysis.
@@ -210,7 +274,8 @@
       let newGrid = [[], [], []];
       inputs.forEach(input => {
         const row = parseInt(input.getAttribute("data-row"));
-        newGrid[row].push(input.value.toUpperCase());
+        const col = parseInt(input.getAttribute("data-col"));
+        newGrid[row][col] = input.value.toUpperCase();
       });
       manualCorrections[face] = newGrid;
       finalGrids[face] = newGrid;
@@ -235,43 +300,11 @@
 
       const result = await response.json();
       const finalDiv = document.getElementById('finalSolution');
-      finalDiv.innerHTML = `<h3>Final Solution</h3>
-        <p>Color Cube String: ${result.color_string}</p>
-        <p>Kociemba String: ${result.cube_string}</p>
-        <p>Solution: ${result.solution}</p>
-        <p>Step-by-Step Instructions:</p>
+      finalDiv.innerHTML = `<h3>Solution Instructions</h3>
         <div class="instructions">${result.instructions}</div>`;
       
       // Hide processing message after results are shown
       document.getElementById('cubeProcessingMessage').style.display = 'none';
-    }
-
-    // Capture images with a countdown.
-    function startAutoCapture() {
-      function captureWithCountdown(count) {
-        if (count === 0) {
-          sendImagesForAnalysis(imagePaths);
-          return;
-        }
-        let timeLeft = TIMER_DURATION;
-        const timerElement = document.getElementById('timer');
-        timerElement.textContent = `Timer: ${timeLeft}s`;
-        
-        const timerInterval = setInterval(() => {
-          timeLeft--;
-          if (timeLeft >= 0) {
-            timerElement.textContent = `Timer: ${timeLeft}s`;
-          }
-        }, 1000);
-        
-        setTimeout(() => {
-          clearInterval(timerInterval);
-          capturePhoto();
-          captureWithCountdown(count - 1);
-        }, TIMER_DURATION * 1000);
-      }
-      
-      captureWithCountdown(totalCaptures);
     }
 
     // Start the live camera feed when "Start Face Capture" is clicked.
@@ -279,21 +312,19 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         document.getElementById('video').srcObject = stream;
+        
+        // Show capture circle and enable capturing
+        document.getElementById('captureCircle').style.display = 'flex';
+        isCapturing = true;
         updateLabel();
-        startAutoCapture();
+        
       } catch (error) {
         console.error("Error accessing camera:", error);
         document.getElementById('gallery').innerHTML += "<p>Error accessing the camera.</p>";
       }
     }
 
-    // Event listeners.
-    document.getElementById('startCaptureBtn').addEventListener("click", startCamera);
-    document.getElementById('faceSelect').addEventListener("change", function() {
-      loadGridEditor(this.value);
-    });
-    document.getElementById('saveCorrectionBtn').addEventListener("click", saveCorrection);
-    document.getElementById('generateSolutionBtn').addEventListener("click", generateSolution);
+    // Event listeners are now initialized in the initializeApp function above
   </script>
 </body>
 </html>

@@ -123,15 +123,15 @@ def generate_solution():
 
     # Generate the color cube string using the (possibly corrected) grids.
     color_cube_string = generate_cube_string(grids)
-    print("Generated Color Cube String:", color_cube_string)
+    #print("Generated Color Cube String:", color_cube_string)
     
     # Convert to kociemba notation.
     kociemba_cube_string = convert_color_to_kociemba(color_cube_string)
-    print("Converted to Kociemba Notation:", kociemba_cube_string)
+    #print("Converted to Kociemba Notation:", kociemba_cube_string)
     
     # Solve the cube.
     cube_solution = solve_cube(kociemba_cube_string)
-    print("Cube Solution:", cube_solution)
+    #print("Cube Solution:", cube_solution)
     
     # Call Gemini AI to get step-by-step instructions in Markdown.
     prompt = (
